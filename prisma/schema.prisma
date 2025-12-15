@@ -56,16 +56,17 @@ model AppUser {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  bankAccounts      BankAccount[]
-  uploads           Upload[]
-  transactions      Transaction[]
-  people            Person[]
-  payments          Payment[]
-  cashSnapshots     CashSnapshot[]
-  recurringExpenses RecurringExpense[]
-  invoices          Invoice[]
-  taxReminders      TaxReminder[]
-  financialGoals    FinancialGoal[]
+  bankAccounts       BankAccount[]
+  uploads            Upload[]
+  transactions       Transaction[]
+  people             Person[]
+  payments           Payment[]
+  cashSnapshots      CashSnapshot[]
+  recurringExpenses  RecurringExpense[]
+  invoices           Invoice[]
+  taxReminders       TaxReminder[]
+  financialGoals     FinancialGoal[]
+  budgetAllocations  BudgetAllocation[]
 }
 
 model BankAccount {
@@ -260,5 +261,24 @@ model FinancialGoal {
 
   user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+}
+
+// ============================================
+// BUDGET ALLOCATION
+// ============================================
+model BudgetAllocation {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  category        String   // e.g., "Marketing", "Employees", "Software"
+  percentOfBudget Int      // Percentage of monthly budget (0-100)
+  amountPaise     Int?     // Optional fixed amount instead of percentage
+  color           String?  // For UI visualization
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
   @@index([userId])
 }

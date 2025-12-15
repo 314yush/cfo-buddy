@@ -313,10 +313,16 @@ export default async function SnapshotPage() {
         </div>
         <div className="flex gap-3">
           <Link
+            href="/budget"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            💰 Budget
+          </Link>
+          <Link
             href="/upload"
             className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-lg transition-colors"
           >
-            📄 Upload Statement
+            📄 Upload
           </Link>
           <Link
             href="/transactions"

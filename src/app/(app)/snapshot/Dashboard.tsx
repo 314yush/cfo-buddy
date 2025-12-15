@@ -49,6 +49,157 @@ export function Dashboard({ data }: { data: DashboardData }) {
   const [scenarioExpense, setScenarioExpense] = useState("");
   const [scenarioHires, setScenarioHires] = useState("0");
   const [scenarioHireCost, setScenarioHireCost] = useState("50000");
+  
+  // Add Form States
+  const [showAddInvoice, setShowAddInvoice] = useState(false);
+  const [showAddTeam, setShowAddTeam] = useState(false);
+  const [showAddRecurring, setShowAddRecurring] = useState(false);
+  const [showAddTax, setShowAddTax] = useState(false);
+  
+  // Form data
+  const [invoiceForm, setInvoiceForm] = useState({ invoiceNumber: "", clientName: "", amount: "", dueDate: "" });
+  const [teamForm, setTeamForm] = useState({ name: "", type: "EMPLOYEE", monthlyCost: "" });
+  const [recurringForm, setRecurringForm] = useState({ name: "", amount: "", frequency: "MONTHLY", category: "Software" });
+  const [taxForm, setTaxForm] = useState({ title: "", taxType: "GST", dueDate: "", amount: "" });
+  
+  // Add handlers
+  const handleAddInvoice = async () => {
+    if (!invoiceForm.invoiceNumber || !invoiceForm.clientName || !invoiceForm.amount || !invoiceForm.dueDate) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/invoices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invoiceNumber: invoiceForm.invoiceNumber,
+          clientName: invoiceForm.clientName,
+          amountPaise: parseFloat(invoiceForm.amount) * 100,
+          dueDate: invoiceForm.dueDate,
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      setInvoiceForm({ invoiceNumber: "", clientName: "", amount: "", dueDate: "" });
+      setShowAddInvoice(false);
+      router.refresh();
+    } catch (e: any) {
+      setMessage({ type: "error", text: e.message });
+    }
+    setLoading(false);
+  };
+
+  const handleAddTeam = async () => {
+    if (!teamForm.name || !teamForm.monthlyCost) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: teamForm.name,
+          type: teamForm.type,
+          monthlyCostPaise: parseFloat(teamForm.monthlyCost) * 100,
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      setTeamForm({ name: "", type: "EMPLOYEE", monthlyCost: "" });
+      setShowAddTeam(false);
+      router.refresh();
+    } catch (e: any) {
+      setMessage({ type: "error", text: e.message });
+    }
+    setLoading(false);
+  };
+
+  const handleAddRecurring = async () => {
+    if (!recurringForm.name || !recurringForm.amount) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/recurring", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: recurringForm.name,
+          amountPaise: parseFloat(recurringForm.amount) * 100,
+          frequency: recurringForm.frequency,
+          category: recurringForm.category,
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      setRecurringForm({ name: "", amount: "", frequency: "MONTHLY", category: "Software" });
+      setShowAddRecurring(false);
+      router.refresh();
+    } catch (e: any) {
+      setMessage({ type: "error", text: e.message });
+    }
+    setLoading(false);
+  };
+
+  const handleAddTax = async () => {
+    if (!taxForm.title || !taxForm.dueDate) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/tax-reminders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: taxForm.title,
+          taxType: taxForm.taxType,
+          dueDate: taxForm.dueDate,
+          amountPaise: taxForm.amount ? parseFloat(taxForm.amount) * 100 : null,
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      setTaxForm({ title: "", taxType: "GST", dueDate: "", amount: "" });
+      setShowAddTax(false);
+      router.refresh();
+    } catch (e: any) {
+      setMessage({ type: "error", text: e.message });
+    }
+    setLoading(false);
+  };
+
+  // Delete handlers
+  const handleDeleteInvoice = async (id: string) => {
+    if (!confirm("Delete this invoice?")) return;
+    await fetch(`/api/invoices/${id}`, { method: "DELETE" });
+    router.refresh();
+  };
+
+  const handleDeleteTeam = async (id: string) => {
+    if (!confirm("Remove this team member?")) return;
+    await fetch(`/api/team/${id}`, { method: "DELETE" });
+    router.refresh();
+  };
+
+  const handleDeleteRecurring = async (id: string) => {
+    if (!confirm("Delete this recurring expense?")) return;
+    await fetch(`/api/recurring/${id}`, { method: "DELETE" });
+    router.refresh();
+  };
+
+  const handleDeleteTax = async (id: string) => {
+    if (!confirm("Delete this tax reminder?")) return;
+    await fetch(`/api/tax-reminders/${id}`, { method: "DELETE" });
+    router.refresh();
+  };
+
+  const handleMarkTaxComplete = async (id: string, isCompleted: boolean) => {
+    await fetch(`/api/tax-reminders/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isCompleted }),
+    });
+    router.refresh();
+  };
+
+  const handleMarkInvoicePaid = async (id: string) => {
+    await fetch(`/api/invoices/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "PAID" }),
+    });
+    router.refresh();
+  };
 
   const generateMockData = async () => {
     setLoading(true);
@@ -267,15 +418,31 @@ export function Dashboard({ data }: { data: DashboardData }) {
             {expenseType === "monthly" && (
               <div>
                 <label className="block text-sm text-slate-400 mb-1">Duration (months)</label>
-                <select
+                <input
+                  type="number"
                   value={expenseDuration}
                   onChange={(e) => setExpenseDuration(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
-                >
-                  <option value="6" className="bg-slate-800">6 months</option>
-                  <option value="12" className="bg-slate-800">12 months</option>
-                  <option value="24" className="bg-slate-800">24 months</option>
-                </select>
+                  placeholder="12"
+                  min="1"
+                  max="120"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500"
+                />
+                <div className="flex gap-2 mt-2">
+                  {["3", "6", "12", "24", "36"].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setExpenseDuration(m)}
+                      className={`px-2 py-1 text-xs rounded ${
+                        expenseDuration === m 
+                          ? "bg-emerald-500 text-white" 
+                          : "bg-white/10 text-slate-400 hover:bg-white/20"
+                      }`}
+                    >
+                      {m}mo
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -596,24 +763,82 @@ export function Dashboard({ data }: { data: DashboardData }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Invoices */}
         <div className="bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">🧾 Invoices & Receivables</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">🧾 Invoices & Receivables</h3>
+            <button
+              onClick={() => setShowAddInvoice(!showAddInvoice)}
+              className="text-xs px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded"
+            >
+              + Add
+            </button>
+          </div>
+          
+          {showAddInvoice && (
+            <div className="mb-4 p-3 bg-white/5 rounded-lg space-y-2">
+              <input
+                type="text"
+                placeholder="Invoice # (e.g., INV-001)"
+                value={invoiceForm.invoiceNumber}
+                onChange={(e) => setInvoiceForm({ ...invoiceForm, invoiceNumber: e.target.value })}
+                className="w-full px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-sm"
+              />
+              <input
+                type="text"
+                placeholder="Client Name"
+                value={invoiceForm.clientName}
+                onChange={(e) => setInvoiceForm({ ...invoiceForm, clientName: e.target.value })}
+                className="w-full px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-sm"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  placeholder="Amount (₹)"
+                  value={invoiceForm.amount}
+                  onChange={(e) => setInvoiceForm({ ...invoiceForm, amount: e.target.value })}
+                  className="px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-sm"
+                />
+                <input
+                  type="date"
+                  value={invoiceForm.dueDate}
+                  onChange={(e) => setInvoiceForm({ ...invoiceForm, dueDate: e.target.value })}
+                  className="px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-sm"
+                />
+              </div>
+              <button
+                onClick={handleAddInvoice}
+                disabled={loading}
+                className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm rounded"
+              >
+                {loading ? "Adding..." : "Add Invoice"}
+              </button>
+            </div>
+          )}
+          
           {data.invoices.length > 0 ? (
             <div className="space-y-3">
               {data.invoices.map((inv) => (
-                <div key={inv.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div key={inv.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg group">
                   <div>
                     <p className="text-white font-medium">{inv.clientName}</p>
                     <p className="text-xs text-slate-400">{inv.invoiceNumber} • Due {new Date(inv.dueDate).toLocaleDateString()}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-white font-medium">{formatINR(inv.amountPaise)}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      inv.status === "PAID" ? "bg-emerald-500/20 text-emerald-400" :
-                      inv.status === "OVERDUE" ? "bg-red-500/20 text-red-400" :
-                      "bg-amber-500/20 text-amber-400"
-                    }`}>
-                      {inv.status}
-                    </span>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <p className="text-white font-medium">{formatINR(inv.amountPaise)}</p>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        inv.status === "PAID" ? "bg-emerald-500/20 text-emerald-400" :
+                        inv.status === "OVERDUE" ? "bg-red-500/20 text-red-400" :
+                        "bg-amber-500/20 text-amber-400"
+                      }`}>
+                        {inv.status}
+                      </span>
+                    </div>
+                    <div className="opacity-0 group-hover:opacity-100 flex gap-1">
+                      {inv.status !== "PAID" && (
+                        <button onClick={() => handleMarkInvoicePaid(inv.id)} className="text-emerald-400 hover:text-emerald-300 text-xs">✓</button>
+                      )}
+                      <button onClick={() => handleDeleteInvoice(inv.id)} className="text-red-400 hover:text-red-300 text-xs">✕</button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -625,11 +850,56 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
         {/* Team */}
         <div className="bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">👥 Team & Contractors</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">👥 Team & Contractors</h3>
+            <button
+              onClick={() => setShowAddTeam(!showAddTeam)}
+              className="text-xs px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded"
+            >
+              + Add
+            </button>
+          </div>
+          
+          {showAddTeam && (
+            <div className="mb-4 p-3 bg-white/5 rounded-lg space-y-2">
+              <input
+                type="text"
+                placeholder="Name"
+                value={teamForm.name}
+                onChange={(e) => setTeamForm({ ...teamForm, name: e.target.value })}
+                className="w-full px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-sm"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  value={teamForm.type}
+                  onChange={(e) => setTeamForm({ ...teamForm, type: e.target.value })}
+                  className="px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-sm"
+                >
+                  <option value="EMPLOYEE" className="bg-slate-800">Employee</option>
+                  <option value="CONTRACTOR" className="bg-slate-800">Contractor</option>
+                </select>
+                <input
+                  type="number"
+                  placeholder="Monthly Cost (₹)"
+                  value={teamForm.monthlyCost}
+                  onChange={(e) => setTeamForm({ ...teamForm, monthlyCost: e.target.value })}
+                  className="px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-sm"
+                />
+              </div>
+              <button
+                onClick={handleAddTeam}
+                disabled={loading}
+                className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm rounded"
+              >
+                {loading ? "Adding..." : "Add Team Member"}
+              </button>
+            </div>
+          )}
+          
           {data.people.length > 0 ? (
             <div className="space-y-3">
               {data.people.map((person) => (
-                <div key={person.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div key={person.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg group">
                   <div>
                     <p className="text-white font-medium">{person.name}</p>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
@@ -638,7 +908,15 @@ export function Dashboard({ data }: { data: DashboardData }) {
                       {person.type}
                     </span>
                   </div>
-                  <p className="text-white font-medium">{formatINR(person.monthlyCostPaise)}/mo</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-white font-medium">{formatINR(person.monthlyCostPaise)}/mo</p>
+                    <button
+                      onClick={() => handleDeleteTeam(person.id)}
+                      className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 text-xs"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               ))}
               <div className="pt-2 border-t border-white/10 flex justify-between">
@@ -653,16 +931,82 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
         {/* Recurring Expenses */}
         <div className="bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">🔄 Recurring Expenses</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">🔄 Recurring Expenses</h3>
+            <button
+              onClick={() => setShowAddRecurring(!showAddRecurring)}
+              className="text-xs px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded"
+            >
+              + Add
+            </button>
+          </div>
+          
+          {showAddRecurring && (
+            <div className="mb-4 p-3 bg-white/5 rounded-lg space-y-2">
+              <input
+                type="text"
+                placeholder="Name (e.g., AWS Hosting)"
+                value={recurringForm.name}
+                onChange={(e) => setRecurringForm({ ...recurringForm, name: e.target.value })}
+                className="w-full px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-sm"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  placeholder="Amount (₹)"
+                  value={recurringForm.amount}
+                  onChange={(e) => setRecurringForm({ ...recurringForm, amount: e.target.value })}
+                  className="px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-sm"
+                />
+                <select
+                  value={recurringForm.frequency}
+                  onChange={(e) => setRecurringForm({ ...recurringForm, frequency: e.target.value })}
+                  className="px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-sm"
+                >
+                  <option value="MONTHLY" className="bg-slate-800">Monthly</option>
+                  <option value="QUARTERLY" className="bg-slate-800">Quarterly</option>
+                  <option value="YEARLY" className="bg-slate-800">Yearly</option>
+                </select>
+              </div>
+              <select
+                value={recurringForm.category}
+                onChange={(e) => setRecurringForm({ ...recurringForm, category: e.target.value })}
+                className="w-full px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-sm"
+              >
+                <option value="Software" className="bg-slate-800">Software</option>
+                <option value="Office" className="bg-slate-800">Office</option>
+                <option value="Utilities" className="bg-slate-800">Utilities</option>
+                <option value="Marketing" className="bg-slate-800">Marketing</option>
+                <option value="Insurance" className="bg-slate-800">Insurance</option>
+                <option value="Other" className="bg-slate-800">Other</option>
+              </select>
+              <button
+                onClick={handleAddRecurring}
+                disabled={loading}
+                className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm rounded"
+              >
+                {loading ? "Adding..." : "Add Expense"}
+              </button>
+            </div>
+          )}
+          
           {data.recurringExpenses.length > 0 ? (
             <div className="space-y-3">
               {data.recurringExpenses.map((exp) => (
-                <div key={exp.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div key={exp.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg group">
                   <div>
                     <p className="text-white font-medium">{exp.name}</p>
                     <p className="text-xs text-slate-400">{exp.frequency} • Next: {new Date(exp.nextDueDate).toLocaleDateString()}</p>
                   </div>
-                  <p className="text-white font-medium">{formatINR(exp.amountPaise)}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-white font-medium">{formatINR(exp.amountPaise)}</p>
+                    <button
+                      onClick={() => handleDeleteRecurring(exp.id)}
+                      className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 text-xs"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               ))}
               <div className="pt-2 border-t border-white/10 flex justify-between">
@@ -677,25 +1021,93 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
         {/* Tax Reminders */}
         <div className="bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">📅 Tax Reminders</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">📅 Tax Reminders</h3>
+            <button
+              onClick={() => setShowAddTax(!showAddTax)}
+              className="text-xs px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded"
+            >
+              + Add
+            </button>
+          </div>
+          
+          {showAddTax && (
+            <div className="mb-4 p-3 bg-white/5 rounded-lg space-y-2">
+              <input
+                type="text"
+                placeholder="Title (e.g., GST Filing December)"
+                value={taxForm.title}
+                onChange={(e) => setTaxForm({ ...taxForm, title: e.target.value })}
+                className="w-full px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-sm"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  value={taxForm.taxType}
+                  onChange={(e) => setTaxForm({ ...taxForm, taxType: e.target.value })}
+                  className="px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-sm"
+                >
+                  <option value="GST" className="bg-slate-800">GST</option>
+                  <option value="TDS" className="bg-slate-800">TDS</option>
+                  <option value="ADVANCE_TAX" className="bg-slate-800">Advance Tax</option>
+                  <option value="ITR" className="bg-slate-800">ITR</option>
+                  <option value="OTHER" className="bg-slate-800">Other</option>
+                </select>
+                <input
+                  type="date"
+                  value={taxForm.dueDate}
+                  onChange={(e) => setTaxForm({ ...taxForm, dueDate: e.target.value })}
+                  className="px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-sm"
+                />
+              </div>
+              <input
+                type="number"
+                placeholder="Estimated Amount (₹) - optional"
+                value={taxForm.amount}
+                onChange={(e) => setTaxForm({ ...taxForm, amount: e.target.value })}
+                className="w-full px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-sm"
+              />
+              <button
+                onClick={handleAddTax}
+                disabled={loading}
+                className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm rounded"
+              >
+                {loading ? "Adding..." : "Add Reminder"}
+              </button>
+            </div>
+          )}
+          
           {data.taxReminders.length > 0 ? (
             <div className="space-y-3">
               {data.taxReminders.map((tax) => (
-                <div key={tax.id} className={`flex items-center justify-between p-3 rounded-lg ${
+                <div key={tax.id} className={`flex items-center justify-between p-3 rounded-lg group ${
                   tax.isCompleted ? "bg-emerald-500/10" : "bg-white/5"
                 }`}>
-                  <div>
-                    <p className={`font-medium ${tax.isCompleted ? "text-slate-400 line-through" : "text-white"}`}>
-                      {tax.title}
-                    </p>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-slate-300">
-                      {tax.taxType}
-                    </span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={tax.isCompleted}
+                      onChange={() => handleMarkTaxComplete(tax.id, !tax.isCompleted)}
+                      className="w-4 h-4 rounded border-white/20"
+                    />
+                    <div>
+                      <p className={`font-medium ${tax.isCompleted ? "text-slate-400 line-through" : "text-white"}`}>
+                        {tax.title}
+                      </p>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-slate-300">
+                        {tax.taxType}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right">
+                  <div className="flex items-center gap-2">
                     <p className={`text-sm ${tax.isCompleted ? "text-emerald-400" : "text-white"}`}>
                       {tax.isCompleted ? "✓ Done" : new Date(tax.dueDate).toLocaleDateString()}
                     </p>
+                    <button
+                      onClick={() => handleDeleteTax(tax.id)}
+                      className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 text-xs"
+                    >
+                      ✕
+                    </button>
                   </div>
                 </div>
               ))}
