@@ -2,8 +2,6 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { usePdfToCsv } from "@/lib/pdf-to-csv/usePdfToCsv";
-import { ProcessingState } from "@/lib/pdf-to-csv/types";
 
 export function UploadForm() {
   const [file, setFile] = useState<File | null>(null);
@@ -14,9 +12,6 @@ export function UploadForm() {
   const [statusMessage, setStatusMessage] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  
-  // PDF to CSV hook for client-side processing
-  const { status: pdfStatus, processFile: processPdf, processTime, reset: resetPdf } = usePdfToCsv();
 
   const isPdf = file?.name.toLowerCase().endsWith(".pdf");
 
@@ -29,43 +24,13 @@ export function UploadForm() {
     setStatusMessage("");
 
     try {
-      let csvText: string | null = null;
-      let useServerSidePdf = false;
-
-      // If PDF, try client-side with Gemini first
+      // All processing happens server-side now (Groq is fast!)
       if (isPdf) {
-        setStatusMessage("Processing PDF with AI (client-side)...");
-        
-        try {
-          csvText = await processPdf(file);
-        } catch (clientError) {
-          console.log("Client-side PDF processing failed, falling back to server:", clientError);
-          csvText = null;
-        }
-        
-        if (!csvText) {
-          // Fall back to server-side processing with Groq
-          setStatusMessage("Falling back to server-side processing...");
-          useServerSidePdf = true;
-        } else {
-          setStatusMessage(`PDF processed in ${processTime.toFixed(1)}s. Saving transactions...`);
-        }
+        setStatusMessage("Uploading PDF for AI processing...");
       }
 
-      // Send to server
       const formData = new FormData();
-      
-      if (isPdf && csvText) {
-        // Client-side processed: Send CSV text directly
-        formData.append("csvText", csvText);
-        formData.append("originalFilename", file.name);
-      } else if (isPdf && useServerSidePdf) {
-        // Client-side failed: Send PDF file for server-side processing
-        formData.append("file", file);
-      } else {
-        // CSV file: Send as-is
-        formData.append("file", file);
-      }
+      formData.append("file", file);
 
       const res = await fetch("/api/import/bank-statement", {
         method: "POST",
@@ -83,7 +48,6 @@ export function UploadForm() {
         setFile(null);
         setPassword("");
         setStatusMessage("");
-        resetPdf();
         if (inputRef.current) inputRef.current.value = "";
 
         // Redirect to transactions after short delay
@@ -210,10 +174,10 @@ export function UploadForm() {
 
       <button
         onClick={handleUpload}
-        disabled={!file || loading || pdfStatus === ProcessingState.PROCESSING}
+        disabled={!file || loading}
         className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
-        {loading || pdfStatus === ProcessingState.PROCESSING ? (
+        {loading ? (
           <>
             <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />

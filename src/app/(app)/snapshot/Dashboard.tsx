@@ -820,7 +820,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
                 <div key={inv.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg group">
                   <div>
                     <p className="text-white font-medium">{inv.clientName}</p>
-                    <p className="text-xs text-slate-400">{inv.invoiceNumber} • Due {new Date(inv.dueDate).toLocaleDateString()}</p>
+                    <p className="text-xs text-slate-400">{inv.invoiceNumber} • Due {new Date(inv.dueDate).toLocaleDateString('en-IN')}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-right">
@@ -996,7 +996,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
                 <div key={exp.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg group">
                   <div>
                     <p className="text-white font-medium">{exp.name}</p>
-                    <p className="text-xs text-slate-400">{exp.frequency} • Next: {new Date(exp.nextDueDate).toLocaleDateString()}</p>
+                    <p className="text-xs text-slate-400">{exp.frequency} • Next: {new Date(exp.nextDueDate).toLocaleDateString('en-IN')}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <p className="text-white font-medium">{formatINR(exp.amountPaise)}</p>
@@ -1100,7 +1100,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
                   </div>
                   <div className="flex items-center gap-2">
                     <p className={`text-sm ${tax.isCompleted ? "text-emerald-400" : "text-white"}`}>
-                      {tax.isCompleted ? "✓ Done" : new Date(tax.dueDate).toLocaleDateString()}
+                      {tax.isCompleted ? "✓ Done" : new Date(tax.dueDate).toLocaleDateString('en-IN')}
                     </p>
                     <button
                       onClick={() => handleDeleteTax(tax.id)}
@@ -1139,7 +1139,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
                     />
                   </div>
                   <p className="text-xs text-slate-400 mt-2">
-                    {progress.toFixed(0)}% • Due {new Date(goal.deadline).toLocaleDateString()}
+                    {progress.toFixed(0)}% • Due {new Date(goal.deadline).toLocaleDateString('en-IN')}
                   </p>
                 </div>
               );

@@ -590,9 +590,9 @@ date,description,debit,credit
       }
     }
 
-    // Add delay between chunks to avoid rate limits
+    // Small delay between chunks to avoid rate limits
     if (chunkIdx < textChunks.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 300));
     }
   }
 
