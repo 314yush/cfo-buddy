@@ -34,7 +34,7 @@ export function CashForm({
     <form onSubmit={handleSubmit} className="flex gap-3">
       <div className="flex-1">
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-medium">
             ₹
           </span>
           <input
@@ -43,7 +43,7 @@ export function CashForm({
             min="0"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="w-full pl-8 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
             placeholder="Enter current cash balance"
           />
         </div>
@@ -51,11 +51,10 @@ export function CashForm({
       <button
         type="submit"
         disabled={loading || !amount}
-        className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Saving..." : "Update"}
       </button>
     </form>
   );
 }
-

@@ -300,29 +300,29 @@ export default async function SnapshotPage() {
     <div className="space-y-8">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="text-2xl font-bold text-slate-800">
             Hey {displayName}! 👋
           </h1>
-          <p className="text-slate-400 mt-1">
+          <p className="text-slate-500 mt-1">
             Here&apos;s your financial command center
           </p>
         </div>
         <div className="flex gap-3">
           <Link
             href="/budget"
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-lg transition-colors"
+            className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-sm font-semibold rounded-xl transition-all shadow-md hover:shadow-lg"
           >
             💰 Budget
           </Link>
           <Link
             href="/upload"
-            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-lg transition-colors"
+            className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-xl transition-colors shadow-sm"
           >
             📄 Upload
           </Link>
           <Link
             href="/transactions"
-            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-lg transition-colors"
+            className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-xl transition-colors shadow-sm"
           >
             📊 Transactions
           </Link>
@@ -330,9 +330,10 @@ export default async function SnapshotPage() {
       </div>
 
       {/* Cash on Hand Form */}
-      <div className="bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">
-          💰 Update Cash on Hand
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <span className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">💰</span>
+          Update Cash on Hand
         </h2>
         <CashForm currentCashPaise={cashSnapshot?.cashOnHandPaise ?? null} />
       </div>
