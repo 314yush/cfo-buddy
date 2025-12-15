@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CFO Buddy 💰
 
-## Getting Started
+A personal finance app for freelancers and solopreneurs in India. Upload your bank statements, track cash flow, and make smarter financial decisions.
 
-First, run the development server:
+## Features
+
+- 📊 **Upload Bank Statements** - CSV or PDF (AI-powered extraction)
+- 💵 **Track Cash Flow** - See your monthly burn and runway
+- 🎯 **Smart Insights** - Personalized recommendations based on your business
+- 🔐 **Secure** - Data stored in your own Supabase instance
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Database**: PostgreSQL (Supabase)
+- **ORM**: Prisma
+- **Auth**: Supabase Auth (Magic Link)
+- **Storage**: Supabase Storage
+- **AI**: Gemini (client-side) + Groq (server-side fallback)
+- **Styling**: Tailwind CSS
+
+## Quick Start
+
+### 1. Clone the repo
+
+```bash
+git clone https://github.com/314yush/cfo-buddy.git
+cd cfo-buddy
+npm install
+```
+
+### 2. Set up Supabase
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Go to **Settings → API** and copy:
+   - Project URL
+   - anon (public) key
+   - service_role key
+3. Go to **Settings → Database** and copy:
+   - Connection string (Transaction mode) → `DATABASE_URL`
+   - Connection string (Session mode) → `DIRECT_URL`
+
+### 3. Create Storage Bucket
+
+In Supabase Dashboard:
+1. Go to **Storage**
+2. Create a new bucket called `bank-statements`
+3. Set it to **Private**
+
+### 4. Configure Environment
+
+```bash
+cp env.example .env
+```
+
+Fill in your values in `.env` (see env.example for reference)
+
+### 5. Set up Database
+
+```bash
+npx prisma generate
+npx prisma db push
+```
+
+### 6. Get AI API Keys
+
+**Gemini (for PDF processing):**
+- Get free key at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+- Add as `NEXT_PUBLIC_GEMINI_API_KEY`
+
+**Groq (server-side fallback):**
+- Get free key at [console.groq.com/keys](https://console.groq.com/keys)
+- Add as `GROQ_API_KEY`
+
+### 7. Run the app
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── (app)/           # Protected routes
+│   │   ├── onboarding/  # User onboarding flow
+│   │   ├── snapshot/    # Financial dashboard
+│   │   ├── transactions/ # Transaction list
+│   │   └── upload/      # File upload
+│   ├── api/             # API routes
+│   ├── auth/            # Auth callback
+│   └── login/           # Login page
+├── lib/
+│   ├── pdf-to-csv/      # PDF processing with Gemini
+│   ├── prisma.ts        # Prisma client
+│   ├── snapshot.ts      # Financial calculations
+│   └── supabase/        # Supabase clients
+└── prisma/
+    └── schema.prisma    # Database schema
+```
 
-## Learn More
+## Supported Banks
 
-To learn more about Next.js, take a look at the following resources:
+CSV uploads work with most Indian banks including:
+- HDFC Bank
+- ICICI Bank
+- SBI
+- Axis Bank
+- Kotak Mahindra
+- Yes Bank
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+PDF uploads use AI to extract transactions from any bank statement format.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## License
 
-## Deploy on Vercel
+MIT
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Contributing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+PRs welcome! Please open an issue first to discuss what you'd like to change.

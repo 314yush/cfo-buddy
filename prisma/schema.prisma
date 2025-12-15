@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum TxDirection {
+  INFLOW
+  OUTFLOW
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+}
+
+enum PersonType {
+  EMPLOYEE
+  CONTRACTOR
+}
+
+enum BusinessType {
+  FREELANCER
+  AGENCY
+  STARTUP
+  SMB
+  OTHER
+}
+
+enum BusinessStage {
+  JUST_STARTED      // 0-6 months
+  EARLY             // 6-18 months
+  GROWING           // 18+ months, scaling
+  ESTABLISHED       // Profitable, stable
+}
+
+model AppUser {
+  id           String   @id @db.Uuid
+  email        String
+  name         String?
+  
+  // Onboarding fields
+  onboardingComplete Boolean       @default(false)
+  businessType       BusinessType?
+  businessStage      BusinessStage?
+  businessName       String?
+  monthlyRevenuePaise Int?         // Average monthly revenue
+  monthlyExpensesPaise Int?        // Average monthly expenses
+  teamSize           Int?          // Number of team members
+  primaryGoal        String?       // What they want to achieve
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  bankAccounts  BankAccount[]
+  uploads       Upload[]
+  transactions  Transaction[]
+  people        Person[]
+  payments      Payment[]
+  cashSnapshots CashSnapshot[]
+}
+
+model BankAccount {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  name      String
+  currency  String   @default("INR")
+  createdAt DateTime @default(now())
+
+  user         AppUser       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  uploads      Upload[]
+  transactions Transaction[]
+}
+
+model Upload {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @db.Uuid
+  bankAccountId    String?  @db.Uuid
+  originalFilename String
+  storageBucket    String
+  storagePath      String
+  status           String   @default("IMPORTED")
+  error            String?
+  uploadedAt       DateTime @default(now())
+
+  user         AppUser      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankAccount  BankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  transactions Transaction[]
+}
+
+model Transaction {
+  id            String      @id @default(uuid()) @db.Uuid
+  userId        String      @db.Uuid
+  bankAccountId String?     @db.Uuid
+  uploadId      String?     @db.Uuid
+
+  date        DateTime
+  description String
+  amountPaise Int
+  direction   TxDirection
+  category    String      @default("Uncategorized")
+
+  dedupeHash String
+  rawRowJson Json?
+  createdAt  DateTime @default(now())
+
+  user        AppUser      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankAccount BankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  upload      Upload?      @relation(fields: [uploadId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, dedupeHash])
+  @@index([userId, date])
+}
+
+model Person {
+  id               String     @id @default(uuid()) @db.Uuid
+  userId           String     @db.Uuid
+  name             String
+  type             PersonType
+  monthlyCostPaise Int
+  startDate        DateTime?
+  createdAt        DateTime   @default(now())
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id          String        @id @default(uuid()) @db.Uuid
+  userId      String        @db.Uuid
+  name        String
+  dueDate     DateTime
+  amountPaise Int
+  status      PaymentStatus @default(PENDING)
+  paidAt      DateTime?
+  createdAt   DateTime      @default(now())
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dueDate])
+}
+
+model CashSnapshot {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  asOfDate        DateTime
+  cashOnHandPaise Int
+  source          String   @default("MANUAL")
+  createdAt       DateTime @default(now())
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, asOfDate])
+}
