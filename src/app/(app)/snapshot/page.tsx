@@ -203,14 +203,12 @@ export default async function SnapshotPage() {
   });
 
   // Get recurring expenses
-  // @ts-expect-error - Prisma types may not be generated yet
   const recurringExpenses: RecurringExpense[] = await prisma.recurringExpense.findMany({
     where: { userId: user.id, isActive: true },
     orderBy: { amountPaise: "desc" },
   });
 
   // Get invoices
-  // @ts-expect-error - Prisma types may not be generated yet
   const invoices: Invoice[] = await prisma.invoice.findMany({
     where: { userId: user.id },
     orderBy: { dueDate: "asc" },
@@ -223,14 +221,12 @@ export default async function SnapshotPage() {
     .reduce((sum: number, i: Invoice) => sum + i.amountPaise, 0);
 
   // Get tax reminders
-  // @ts-expect-error - Prisma types may not be generated yet
   const taxReminders: TaxReminder[] = await prisma.taxReminder.findMany({
     where: { userId: user.id },
     orderBy: { dueDate: "asc" },
   });
 
   // Get financial goals
-  // @ts-expect-error - Prisma types may not be generated yet
   const goals: FinancialGoal[] = await prisma.financialGoal.findMany({
     where: { userId: user.id },
     orderBy: { deadline: "asc" },

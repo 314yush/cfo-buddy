@@ -78,8 +78,21 @@ const RECURRING_EXPENSES = [
   { name: "Figma Pro", amount: 3000, frequency: "MONTHLY", category: "Software" },
   { name: "Office Rent", amount: 35000, frequency: "MONTHLY", category: "Office" },
   { name: "Internet (Airtel)", amount: 2000, frequency: "MONTHLY", category: "Utilities" },
-  { name: "Insurance Premium", amount: 45000, frequency: "QUARTERLY", category: "Insurance" },
+  { name: "Insurance Premium", amount: 45000, frequency: "QUARTERLY", category: "Other" },
   { name: "Domain Renewal", amount: 1500, frequency: "YEARLY", category: "Software" },
+];
+
+// Budget categories that match transaction categories
+const BUDGET_ALLOCATIONS = [
+  { category: "Employees", percent: 35, color: "#3b82f6" },
+  { category: "Software", percent: 15, color: "#10b981" },
+  { category: "Marketing", percent: 12, color: "#8b5cf6" },
+  { category: "Office", percent: 10, color: "#f59e0b" },
+  { category: "Contractor", percent: 10, color: "#ec4899" },
+  { category: "Food", percent: 8, color: "#14b8a6" },
+  { category: "Utilities", percent: 5, color: "#6366f1" },
+  { category: "Travel", percent: 3, color: "#ef4444" },
+  { category: "Other", percent: 2, color: "#64748b" },
 ];
 
 function computeHash(date: Date, description: string, amountPaise: number, direction: string): string {
@@ -142,6 +155,7 @@ export async function POST(request: Request) {
       invoices: 0,
       taxReminders: 0,
       goals: 0,
+      budget: 0,
     };
 
     // ============================================
@@ -163,7 +177,7 @@ export async function POST(request: Request) {
       
       const category = isInflow 
         ? "Revenue"
-        : getRandomElement(["Software", "Office", "Travel", "Food", "Utilities", "Marketing", "Contractor"]);
+        : getRandomElement(["Software", "Office", "Travel", "Food", "Utilities", "Marketing", "Contractor", "Employees"]);
 
       const hash = computeHash(date, description, amountPaise, direction);
 
@@ -369,6 +383,32 @@ export async function POST(request: Request) {
       }
     }
 
+    // ============================================
+    // 8. GENERATE BUDGET ALLOCATIONS
+    // ============================================
+    for (const allocation of BUDGET_ALLOCATIONS) {
+      const existing = await prisma.budgetAllocation.findUnique({
+        where: {
+          userId_category: {
+            userId: user.id,
+            category: allocation.category,
+          },
+        },
+      });
+
+      if (!existing) {
+        await prisma.budgetAllocation.create({
+          data: {
+            userId: user.id,
+            category: allocation.category,
+            percentOfBudget: allocation.percent,
+            color: allocation.color,
+          },
+        });
+        results.budget++;
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: "Mock data generated successfully!",
@@ -405,6 +445,7 @@ export async function DELETE() {
       prisma.taxReminder.deleteMany({ where: { userId: user.id } }),
       prisma.financialGoal.deleteMany({ where: { userId: user.id } }),
       prisma.payment.deleteMany({ where: { userId: user.id } }),
+      prisma.budgetAllocation.deleteMany({ where: { userId: user.id } }),
     ]);
 
     return NextResponse.json({
@@ -418,6 +459,7 @@ export async function DELETE() {
         taxReminders: results[5].count,
         goals: results[6].count,
         payments: results[7].count,
+        budgetAllocations: results[8].count,
       },
     });
   } catch (error) {

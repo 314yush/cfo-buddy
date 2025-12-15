@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatINR } from "@/lib/snapshot";
 
@@ -165,7 +165,7 @@ export function BudgetManager({ initialAllocations, spendingByCategory, totalMon
                   
                   return { paths: acc.paths, currentAngle: endAngle };
                 },
-                { paths: [] as JSX.Element[], currentAngle: 0 }
+                { paths: [] as React.ReactElement[], currentAngle: 0 }
               ).paths}
               {remainingPercent > 0 && (
                 <circle cx="50" cy="50" r="40" fill="none" stroke="#1e293b" strokeWidth="40" 
