@@ -4,6 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatINR } from "@/lib/snapshot";
 
+type MonthlyData = {
+  month: string;
+  label: string;
+  inflow: number;
+  outflow: number;
+  net: number;
+  cashBalance: number;
+};
+
 type DashboardData = {
   cashOnHandPaise: number | null;
   burnMonthlyPaise: number;
@@ -20,6 +29,7 @@ type DashboardData = {
   upcomingPayments: number;
   overdueInvoices: number;
   pendingReceivables: number;
+  monthlyTrend: MonthlyData[];
 };
 
 export function Dashboard({ data }: { data: DashboardData }) {
@@ -32,6 +42,13 @@ export function Dashboard({ data }: { data: DashboardData }) {
   const [expenseType, setExpenseType] = useState<"one-time" | "monthly">("monthly");
   const [expenseAmount, setExpenseAmount] = useState("");
   const [expenseDuration, setExpenseDuration] = useState("12");
+  
+  // Scenario Planner State
+  const [showScenario, setShowScenario] = useState(false);
+  const [scenarioRevenue, setScenarioRevenue] = useState("");
+  const [scenarioExpense, setScenarioExpense] = useState("");
+  const [scenarioHires, setScenarioHires] = useState("0");
+  const [scenarioHireCost, setScenarioHireCost] = useState("50000");
 
   const generateMockData = async () => {
     setLoading(true);
@@ -99,6 +116,54 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
   const affordability = calculateAffordability();
 
+  // Scenario Planner Calculation
+  const calculateScenario = () => {
+    if (!data.cashOnHandPaise) return null;
+    
+    const revenueChange = parseFloat(scenarioRevenue || "0") * 100;
+    const expenseChange = parseFloat(scenarioExpense || "0") * 100;
+    const hires = parseInt(scenarioHires || "0");
+    const hireCost = parseFloat(scenarioHireCost || "0") * 100;
+    
+    const currentMonthlyInflow = data.inflowPaise / 3; // Assuming 90 days data = 3 months
+    const currentMonthlyOutflow = data.outflowPaise / 3;
+    
+    const newMonthlyInflow = currentMonthlyInflow + revenueChange;
+    const newMonthlyOutflow = currentMonthlyOutflow + expenseChange + (hires * hireCost);
+    const newBurn = newMonthlyOutflow - newMonthlyInflow;
+    
+    // Project 12 months
+    const projections = [];
+    let cashBalance = data.cashOnHandPaise;
+    
+    for (let i = 1; i <= 12; i++) {
+      cashBalance = cashBalance + newMonthlyInflow - newMonthlyOutflow;
+      const monthDate = new Date();
+      monthDate.setMonth(monthDate.getMonth() + i);
+      projections.push({
+        month: i,
+        label: monthDate.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }),
+        cash: cashBalance,
+        profitable: newMonthlyInflow >= newMonthlyOutflow,
+      });
+    }
+    
+    const runwayMonths = newBurn > 0 ? data.cashOnHandPaise / newBurn : null;
+    const zeroMonth = projections.findIndex(p => p.cash <= 0);
+    
+    return {
+      newMonthlyInflow,
+      newMonthlyOutflow,
+      newBurn,
+      runwayMonths,
+      projections,
+      zeroMonth: zeroMonth === -1 ? null : zeroMonth + 1,
+      profitable: newMonthlyInflow >= newMonthlyOutflow,
+    };
+  };
+  
+  const scenario = calculateScenario();
+
   // Alerts
   const alerts = [];
   if (data.runwayMonths !== null && data.runwayMonths < 3) {
@@ -141,6 +206,12 @@ export function Dashboard({ data }: { data: DashboardData }) {
           className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-lg transition-colors"
         >
           🧮 Can I Afford This?
+        </button>
+        <button
+          onClick={() => setShowScenario(!showScenario)}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          🔮 Scenario Planner
         </button>
       </div>
 
@@ -260,6 +331,201 @@ export function Dashboard({ data }: { data: DashboardData }) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Scenario Planner */}
+      {showScenario && (
+        <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 backdrop-blur-xl rounded-xl border border-blue-500/20 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">🔮 Scenario Planner - What If...</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Monthly Revenue Change (₹)</label>
+              <input
+                type="number"
+                value={scenarioRevenue}
+                onChange={(e) => setScenarioRevenue(e.target.value)}
+                placeholder="+50000 or -20000"
+                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Monthly Expense Change (₹)</label>
+              <input
+                type="number"
+                value={scenarioExpense}
+                onChange={(e) => setScenarioExpense(e.target.value)}
+                placeholder="+10000"
+                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">New Hires</label>
+              <select
+                value={scenarioHires}
+                onChange={(e) => setScenarioHires(e.target.value)}
+                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
+              >
+                <option value="0" className="bg-slate-800">No new hires</option>
+                <option value="1" className="bg-slate-800">1 person</option>
+                <option value="2" className="bg-slate-800">2 people</option>
+                <option value="3" className="bg-slate-800">3 people</option>
+                <option value="5" className="bg-slate-800">5 people</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Cost per Hire (₹/month)</label>
+              <input
+                type="number"
+                value={scenarioHireCost}
+                onChange={(e) => setScenarioHireCost(e.target.value)}
+                placeholder="50000"
+                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-500"
+              />
+            </div>
+          </div>
+
+          {scenario && (
+            <div className="space-y-4">
+              {/* Summary */}
+              <div className={`p-4 rounded-lg ${scenario.profitable ? "bg-emerald-500/20" : "bg-amber-500/20"}`}>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">{scenario.profitable ? "📈" : "📉"}</span>
+                  <span className="text-lg font-semibold text-white">
+                    {scenario.profitable ? "Scenario looks profitable!" : "Scenario shows negative cash flow"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-slate-400">New Monthly Revenue</p>
+                    <p className="text-emerald-400 font-medium">{formatINR(scenario.newMonthlyInflow)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">New Monthly Expenses</p>
+                    <p className="text-red-400 font-medium">{formatINR(scenario.newMonthlyOutflow)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">Net Monthly</p>
+                    <p className={`font-medium ${scenario.newMonthlyInflow >= scenario.newMonthlyOutflow ? "text-emerald-400" : "text-red-400"}`}>
+                      {scenario.newMonthlyInflow >= scenario.newMonthlyOutflow ? "+" : ""}{formatINR(scenario.newMonthlyInflow - scenario.newMonthlyOutflow)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400">Projected Runway</p>
+                    <p className={`font-medium ${!scenario.runwayMonths || scenario.runwayMonths > 6 ? "text-emerald-400" : scenario.runwayMonths < 3 ? "text-red-400" : "text-amber-400"}`}>
+                      {scenario.runwayMonths ? `${scenario.runwayMonths.toFixed(1)} months` : "∞ Profitable"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 12-Month Projection Chart */}
+              <div className="p-4 bg-white/5 rounded-lg">
+                <h4 className="text-sm font-medium text-slate-400 mb-4">12-Month Cash Projection</h4>
+                <div className="flex items-end gap-1 h-32">
+                  {scenario.projections.map((p, i) => {
+                    const maxCash = Math.max(...scenario.projections.map(x => Math.abs(x.cash)), data.cashOnHandPaise || 1);
+                    const height = Math.abs(p.cash) / maxCash * 100;
+                    const isNegative = p.cash < 0;
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                        <div className="w-full relative" style={{ height: '100px' }}>
+                          <div
+                            className={`absolute bottom-0 w-full rounded-t transition-all ${
+                              isNegative ? "bg-red-500" : "bg-gradient-to-t from-emerald-600 to-emerald-400"
+                            }`}
+                            style={{ height: `${Math.min(height, 100)}%` }}
+                            title={`${p.label}: ${formatINR(p.cash)}`}
+                          />
+                        </div>
+                        <span className="text-[10px] text-slate-500">{p.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {scenario.zeroMonth && (
+                  <p className="text-red-400 text-sm mt-3">
+                    ⚠️ Cash runs out in month {scenario.zeroMonth} ({scenario.projections[scenario.zeroMonth - 1]?.label})
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Monthly Trend Chart */}
+      {data.monthlyTrend && data.monthlyTrend.length > 0 && (
+        <div className="bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">📊 Monthly Cash Flow Trend</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Bar Chart */}
+            <div>
+              <h4 className="text-sm font-medium text-slate-400 mb-3">Inflows vs Outflows</h4>
+              <div className="space-y-3">
+                {data.monthlyTrend.map((m, i) => {
+                  const maxValue = Math.max(...data.monthlyTrend.flatMap(x => [x.inflow, x.outflow]));
+                  const inflowWidth = (m.inflow / maxValue) * 100;
+                  const outflowWidth = (m.outflow / maxValue) * 100;
+                  return (
+                    <div key={i} className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-400">{m.label}</span>
+                        <span className={m.net >= 0 ? "text-emerald-400" : "text-red-400"}>
+                          {m.net >= 0 ? "+" : ""}{formatINR(m.net)}
+                        </span>
+                      </div>
+                      <div className="flex gap-1 h-4">
+                        <div
+                          className="bg-emerald-500 rounded-l"
+                          style={{ width: `${inflowWidth}%` }}
+                          title={`Inflow: ${formatINR(m.inflow)}`}
+                        />
+                        <div
+                          className="bg-red-500 rounded-r"
+                          style={{ width: `${outflowWidth}%` }}
+                          title={`Outflow: ${formatINR(m.outflow)}`}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex gap-4 mt-3 text-xs">
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 bg-emerald-500 rounded" /> Inflow
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 bg-red-500 rounded" /> Outflow
+                </span>
+              </div>
+            </div>
+
+            {/* Cash Balance Trend */}
+            <div>
+              <h4 className="text-sm font-medium text-slate-400 mb-3">Cash Balance Trend</h4>
+              <div className="flex items-end gap-2 h-32">
+                {data.monthlyTrend.map((m, i) => {
+                  const maxCash = Math.max(...data.monthlyTrend.map(x => x.cashBalance));
+                  const minCash = Math.min(...data.monthlyTrend.map(x => x.cashBalance));
+                  const range = maxCash - minCash || 1;
+                  const height = ((m.cashBalance - minCash) / range) * 100;
+                  return (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full h-24 relative">
+                        <div
+                          className="absolute bottom-0 w-full bg-gradient-to-t from-blue-600 to-blue-400 rounded-t transition-all"
+                          style={{ height: `${Math.max(height, 5)}%` }}
+                          title={`${m.label}: ${formatINR(m.cashBalance)}`}
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-500">{m.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

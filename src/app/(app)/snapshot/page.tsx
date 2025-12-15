@@ -75,30 +75,35 @@ export default async function SnapshotPage() {
     select: { cashOnHandPaise: true, asOfDate: true },
   });
 
-  // Get transactions for last 90 days
-  const ninetyDaysAgo = new Date();
-  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  // Get transactions for last 180 days (6 months for trend)
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setDate(sixMonthsAgo.getDate() - 180);
 
   const transactions = await prisma.transaction.findMany({
     where: { 
       userId: user.id, 
-      date: { gte: ninetyDaysAgo } 
+      date: { gte: sixMonthsAgo } 
     },
-    select: { direction: true, amountPaise: true, category: true },
+    select: { direction: true, amountPaise: true, category: true, date: true },
   });
 
-  // Calculate totals
-  const inflowPaise = transactions
+  // Calculate totals (last 90 days for main stats)
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  
+  const recentTransactions = transactions.filter(t => t.date >= ninetyDaysAgo);
+  
+  const inflowPaise = recentTransactions
     .filter(t => t.direction === "INFLOW")
     .reduce((sum, t) => sum + t.amountPaise, 0);
   
-  const outflowPaise = transactions
+  const outflowPaise = recentTransactions
     .filter(t => t.direction === "OUTFLOW")
     .reduce((sum, t) => sum + t.amountPaise, 0);
 
-  // Category breakdown (outflows only)
+  // Category breakdown (outflows only, last 90 days)
   const categoryMap = new Map<string, number>();
-  transactions
+  recentTransactions
     .filter(t => t.direction === "OUTFLOW")
     .forEach(t => {
       const current = categoryMap.get(t.category) || 0;
@@ -108,6 +113,60 @@ export default async function SnapshotPage() {
   const categoryBreakdown = Array.from(categoryMap.entries())
     .map(([category, total]) => ({ category, total }))
     .sort((a, b) => b.total - a.total);
+
+  // Calculate monthly trend (last 6 months)
+  const monthlyTrendMap = new Map<string, { inflow: number; outflow: number }>();
+  
+  // Initialize last 6 months
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    monthlyTrendMap.set(key, { inflow: 0, outflow: 0 });
+  }
+  
+  // Aggregate transactions by month
+  transactions.forEach(t => {
+    const d = new Date(t.date);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const existing = monthlyTrendMap.get(key);
+    if (existing) {
+      if (t.direction === "INFLOW") {
+        existing.inflow += t.amountPaise;
+      } else {
+        existing.outflow += t.amountPaise;
+      }
+    }
+  });
+  
+  // Get cash snapshots for trend
+  const cashSnapshots = await prisma.cashSnapshot.findMany({
+    where: { userId: user.id },
+    orderBy: { asOfDate: "asc" },
+  });
+  
+  // Build monthly trend array
+  const monthlyTrend = Array.from(monthlyTrendMap.entries()).map(([month, data]) => {
+    const [year, monthNum] = month.split('-');
+    const date = new Date(parseInt(year), parseInt(monthNum) - 1);
+    const label = date.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+    
+    // Find closest cash snapshot for this month
+    const monthEnd = new Date(parseInt(year), parseInt(monthNum), 0);
+    const snapshot = cashSnapshots.find(s => {
+      const snapDate = new Date(s.asOfDate);
+      return snapDate.getFullYear() === parseInt(year) && snapDate.getMonth() === parseInt(monthNum) - 1;
+    });
+    
+    return {
+      month,
+      label,
+      inflow: data.inflow,
+      outflow: data.outflow,
+      net: data.inflow - data.outflow,
+      cashBalance: snapshot?.cashOnHandPaise || 0,
+    };
+  });
 
   // Compute burn and runway
   const latestTx = await prisma.transaction.findFirst({
@@ -238,6 +297,7 @@ export default async function SnapshotPage() {
     upcomingPayments,
     overdueInvoices,
     pendingReceivables,
+    monthlyTrend,
   };
 
   return (
