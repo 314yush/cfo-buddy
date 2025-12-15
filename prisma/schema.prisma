@@ -56,12 +56,16 @@ model AppUser {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  bankAccounts  BankAccount[]
-  uploads       Upload[]
-  transactions  Transaction[]
-  people        Person[]
-  payments      Payment[]
-  cashSnapshots CashSnapshot[]
+  bankAccounts      BankAccount[]
+  uploads           Upload[]
+  transactions      Transaction[]
+  people            Person[]
+  payments          Payment[]
+  cashSnapshots     CashSnapshot[]
+  recurringExpenses RecurringExpense[]
+  invoices          Invoice[]
+  taxReminders      TaxReminder[]
+  financialGoals    FinancialGoal[]
 }
 
 model BankAccount {
@@ -154,4 +158,107 @@ model CashSnapshot {
   user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, asOfDate])
+}
+
+// ============================================
+// RECURRING EXPENSES
+// ============================================
+enum RecurringFrequency {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+model RecurringExpense {
+  id          String             @id @default(uuid()) @db.Uuid
+  userId      String             @db.Uuid
+  name        String
+  amountPaise Int
+  frequency   RecurringFrequency
+  category    String             @default("Subscription")
+  nextDueDate DateTime
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, nextDueDate])
+}
+
+// ============================================
+// INVOICES / RECEIVABLES
+// ============================================
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model Invoice {
+  id            String        @id @default(uuid()) @db.Uuid
+  userId        String        @db.Uuid
+  invoiceNumber String
+  clientName    String
+  clientEmail   String?
+  amountPaise   Int
+  dueDate       DateTime
+  status        InvoiceStatus @default(SENT)
+  paidAt        DateTime?
+  notes         String?
+  createdAt     DateTime      @default(now())
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, invoiceNumber])
+  @@index([userId, status])
+  @@index([userId, dueDate])
+}
+
+// ============================================
+// TAX REMINDERS
+// ============================================
+enum TaxType {
+  GST
+  TDS
+  ADVANCE_TAX
+  ITR
+  OTHER
+}
+
+model TaxReminder {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  taxType     TaxType
+  title       String
+  dueDate     DateTime
+  amountPaise Int?     // Estimated amount if known
+  isCompleted Boolean  @default(false)
+  completedAt DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dueDate])
+}
+
+// ============================================
+// GOALS & PROJECTIONS
+// ============================================
+model FinancialGoal {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  title           String
+  targetPaise     Int
+  currentPaise    Int      @default(0)
+  deadline        DateTime
+  isCompleted     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
