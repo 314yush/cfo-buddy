@@ -4,24 +4,24 @@ export default function UploadPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Upload Bank Statement</h1>
-        <p className="text-slate-400 mt-1">
+        <h1 className="text-2xl font-bold text-slate-800">Upload Bank Statement</h1>
+        <p className="text-slate-500 mt-1">
           Import your transactions from a CSV or PDF file
         </p>
       </div>
 
-      <div className="bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 p-6">
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
         <UploadForm />
       </div>
 
       {/* Supported Formats */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* PDF Info */}
-        <div className="bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 p-6">
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center">
               <svg
-                className="w-5 h-5 text-blue-400"
+                className="w-6 h-6 text-blue-600"
                 viewBox="0 0 24 24"
                 fill="currentColor"
               >
@@ -29,51 +29,43 @@ export default function UploadPage() {
               </svg>
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">
-                PDF Support
-              </h2>
-              <span className="text-xs text-blue-400">Powered by Gemini AI</span>
+              <h2 className="text-lg font-bold text-slate-800">PDF Support</h2>
+              <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Powered by AI</span>
             </div>
           </div>
-          <ul className="space-y-2 text-sm text-slate-300">
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-400 mt-0.5">✓</span>
-              <span>AI-powered extraction — understands any bank format</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-400 mt-0.5">✓</span>
-              <span>Works with scanned PDFs and images</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-400 mt-0.5">✓</span>
-              <span>Handles HDFC, ICICI, SBI, Axis, Kotak, and more</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-slate-500 mt-0.5">•</span>
-              <span className="text-slate-400">
-                Password hint: DOB (DDMMYYYY), PAN, or Account number
+          <ul className="space-y-3 text-sm">
+            <li className="flex items-start gap-3">
+              <span className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-emerald-600 text-xs">✓</span>
               </span>
+              <span className="text-slate-600">AI-powered extraction — understands any bank format</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-emerald-600 text-xs">✓</span>
+              </span>
+              <span className="text-slate-600">Works with scanned PDFs and images</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-emerald-600 text-xs">✓</span>
+              </span>
+              <span className="text-slate-600">Handles HDFC, ICICI, SBI, Axis, Kotak, and more</span>
             </li>
           </ul>
-          <p className="text-slate-500 text-xs mt-4">
-            Note: Requires GEMINI_API_KEY in environment. Get free at{" "}
-            <a
-              href="https://aistudio.google.com/app/apikey"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 hover:underline"
-            >
-              aistudio.google.com
-            </a>
-          </p>
+          <div className="mt-4 p-3 bg-slate-50 rounded-xl">
+            <p className="text-slate-500 text-xs">
+              💡 Common passwords: DOB (DDMMYYYY), PAN, or Account number
+            </p>
+          </div>
         </div>
 
         {/* CSV Info */}
-        <div className="bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 p-6">
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-100 to-green-100 rounded-xl flex items-center justify-center">
               <svg
-                className="w-5 h-5 text-emerald-400"
+                className="w-6 h-6 text-emerald-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -86,35 +78,42 @@ export default function UploadPage() {
                 />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold text-white">
-              CSV Format (Recommended)
-            </h2>
+            <div>
+              <h2 className="text-lg font-bold text-slate-800">CSV Format</h2>
+              <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Recommended</span>
+            </div>
           </div>
-          <ul className="space-y-2 text-sm text-slate-300">
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-400 mt-0.5">✓</span>
-              <span>
-                Columns: <code className="text-xs bg-white/10 px-1 rounded">date</code>,{" "}
-                <code className="text-xs bg-white/10 px-1 rounded">description</code>,{" "}
-                <code className="text-xs bg-white/10 px-1 rounded">debit/credit</code>
+          <ul className="space-y-3 text-sm">
+            <li className="flex items-start gap-3">
+              <span className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-emerald-600 text-xs">✓</span>
+              </span>
+              <span className="text-slate-600">
+                Columns: <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded font-mono">date</code>,{" "}
+                <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded font-mono">description</code>,{" "}
+                <code className="text-xs bg-slate-100 px-1.5 py-0.5 rounded font-mono">debit/credit</code>
               </span>
             </li>
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-400 mt-0.5">✓</span>
-              <span>Most reliable parsing</span>
+            <li className="flex items-start gap-3">
+              <span className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-emerald-600 text-xs">✓</span>
+              </span>
+              <span className="text-slate-600">Most reliable parsing method</span>
             </li>
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-400 mt-0.5">✓</span>
-              <span>Works with HDFC, ICICI, SBI, Axis, Kotak, Yes Bank</span>
+            <li className="flex items-start gap-3">
+              <span className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-emerald-600 text-xs">✓</span>
+              </span>
+              <span className="text-slate-600">Works with all major Indian banks</span>
             </li>
           </ul>
-          <p className="text-slate-500 text-xs mt-4">
-            Download from your bank&apos;s net banking portal: Statement → Download
-            → CSV/Excel
-          </p>
+          <div className="mt-4 p-3 bg-slate-50 rounded-xl">
+            <p className="text-slate-500 text-xs">
+              📥 Download from: Net Banking → Statement → Download → CSV/Excel
+            </p>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-

@@ -2,12 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-
-const NAV_ITEMS = [
-  { href: "/snapshot", label: "Snapshot" },
-  { href: "/transactions", label: "Transactions" },
-  { href: "/upload", label: "Upload" },
-];
+import { Sidebar } from "./Sidebar";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -26,49 +21,44 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   });
 
   const displayName = appUser?.name || appUser?.businessName || user.email?.split("@")[0] || "User";
+  const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <header className="border-b border-white/10 bg-white/5 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link
-              href="/snapshot"
-              className="text-lg font-bold text-white tracking-tight"
-            >
-              Accounting Buddy
-            </Link>
+    <div className="min-h-screen bg-[#f8fafc] flex">
+      {/* Sidebar */}
+      <Sidebar displayName={displayName} initials={initials} />
 
-            <nav className="flex items-center gap-1">
-              {NAV_ITEMS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  {item.label}
-                </Link>
-              ))}
-              <div className="ml-4 flex items-center gap-3 pl-4 border-l border-white/10">
-                <span className="text-sm text-slate-400">
-                  {displayName}
-                </span>
-                <Link
-                  href="/logout"
-                  className="px-3 py-1.5 text-sm font-medium text-slate-400 hover:text-white transition-colors"
-                >
-                  Sign out
-                </Link>
+      {/* Main Content */}
+      <main className="flex-1 ml-[240px]">
+        {/* Top Header */}
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+          <div className="px-8 h-16 flex items-center justify-between">
+            <div>
+              <h1 className="text-lg font-semibold text-slate-800">Dashboard</h1>
+              <p className="text-sm text-slate-500">Welcome back, {displayName}!</p>
+            </div>
+            <div className="flex items-center gap-4">
+              {/* Notification Bell */}
+              <button className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+              </button>
+              {/* Profile */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-semibold text-sm">
+                  {initials}
+                </div>
               </div>
-            </nav>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
+        {/* Page Content */}
+        <div className="p-8">
+          {children}
+        </div>
       </main>
     </div>
   );
 }
-

@@ -49,8 +49,8 @@ export default async function BudgetPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">💰 Budget Allocation</h1>
-        <p className="text-slate-400 mt-1">
+        <h1 className="text-2xl font-bold text-slate-800">💰 Budget Allocation</h1>
+        <p className="text-slate-500 mt-1">
           Set percentage-based budgets for each category and track your spending
         </p>
       </div>
@@ -70,5 +70,3 @@ export default async function BudgetPage() {
     </div>
   );
 }
-
-
