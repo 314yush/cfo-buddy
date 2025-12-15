@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createClientWithRefresh } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { prisma } from "@/lib/prisma";
 import { parse } from "csv-parse/sync";
@@ -607,10 +607,16 @@ date,description,debit,credit
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  // Use refreshed client for API routes
+  const supabase = await createClientWithRefresh();
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
+
+  if (authError) {
+    console.error("Auth error in bank-statement route:", authError.message);
+  }
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

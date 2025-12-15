@@ -26,3 +26,22 @@ export async function createClient() {
   );
 }
 
+// For route handlers that need to refresh the session
+export async function createClientWithRefresh() {
+  const supabase = await createClient();
+  
+  // Attempt to refresh session if needed
+  const { data: { session }, error } = await supabase.auth.getSession();
+  
+  if (error) {
+    console.error("Session error:", error.message);
+  }
+  
+  // If session exists, try to refresh it
+  if (session) {
+    await supabase.auth.refreshSession();
+  }
+  
+  return supabase;
+}
+

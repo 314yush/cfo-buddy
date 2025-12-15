@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClientWithRefresh } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { prisma } from "@/lib/prisma";
 import { parse } from "csv-parse/sync";
@@ -65,10 +65,15 @@ function computeHash(date: Date, description: string, amountPaise: number, direc
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const supabase = await createClientWithRefresh();
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
+
+  if (authError) {
+    console.error("Auth error in bank-csv route:", authError.message);
+  }
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
